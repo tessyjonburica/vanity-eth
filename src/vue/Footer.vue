@@ -1,24 +1,14 @@
 <template>
     <footer>
         <div class="container">
-            <div class="row">
-                <div class="col-12 col-lg-6 address">
-                    Tips:
-                    <a
-                        :href="`https://etherscan.io/address/${tipsAddress}#tokentxns`"
-                        target="_blank"
-                        v-text="tipsAddress"
-                    ></a>
+            <div class="row align-items-center">
+                <div class="col-12 col-lg-8 address">
+                    <span class="label">Tips&nbsp;</span>
+                    <a :href="`https://etherscan.io/address/${tipsAddress}`" target="_blank" v-text="tipsAddress"></a>
                 </div>
-                <div class="col-12 col-lg-6 links">
+                <div class="col-12 col-lg-4 links">
                     <a :href="`https://etherscan.io/address/${tipsAddress}`" target="_blank">
-                        <i class="icon-ethereum"></i>&nbsp;&nbsp;&nbsp;Donate
-                    </a>
-                    <a href="https://github.com/bokub/vanity-eth" target="_blank">
-                        <i class="icon-star"></i>&nbsp;&nbsp;&nbsp;Star&nbsp;me
-                    </a>
-                    <a href="https://github.com/bokub/vanity-eth/wiki/download-Vanity-ETH" target="_blank">
-                        <i class="icon-download"></i>&nbsp;&nbsp;&nbsp;Download
+                        <i class="icon-ethereum"></i>&nbsp;&nbsp;Donate
                     </a>
                 </div>
             </div>
@@ -42,24 +32,35 @@
         padding: 1rem 0 0.5rem
         background-color: $panel-background
         color: $text-alt
+        border-top: 1px solid $border-grey
         a
             text-decoration: none
+            color: $text-alt
+            &:hover
+                color: $text
+        .label
+            font-size: 0.78em
+            text-transform: uppercase
+            letter-spacing: 0.1em
+            color: $text-alt
+            margin-right: 4px
         .address
-            margin-bottom: 20px
-            color: $text
+            margin-bottom: 12px
             a
                 font-family: $monospace-font
-                margin-left: 15px
+                font-size: 0.88em
                 word-break: break-all
         .links
             text-align: right
             a
-                margin-right: 30px
-                padding-bottom: 2px
+                margin-right: 20px
                 i
-                    font-size: 1.2em
+                    font-size: 1.1em
 
     @media screen and (max-width: 480px)
         footer
             padding-bottom: 1em
+        .links
+            text-align: left
+            margin-top: 8px
 </style>

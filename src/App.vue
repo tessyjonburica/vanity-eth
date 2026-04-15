@@ -48,6 +48,13 @@
                     <result :address="result.address" :private-key="result.privateKey"></result>
                 </div>
             </div>
+
+            <!--Wallet recurrence analysis-->
+            <div class="row">
+                <div class="col-md-12">
+                    <wallet-recurrence></wallet-recurrence>
+                </div>
+            </div>
         </div>
 
         <!--Save modal-->
@@ -73,9 +80,10 @@
     import Save from './vue/Save.vue';
     import Corner from './vue/Corner';
     import Foot from './vue/Footer';
+    import WalletRecurrence from './vue/WalletRecurrence.vue';
 
     export default {
-        components: { Headline, Description, Err, UserInput, Statistics, Result, Save, Corner, Foot },
+        components: { Headline, Description, Err, UserInput, Statistics, Result, Save, Corner, Foot, WalletRecurrence },
         data: function () {
             return {
                 running: false,
@@ -222,10 +230,6 @@
                 } catch (e) {
                     this.error = 'insecure_location';
                 }
-                const hostname = window.location.hostname;
-                if (hostname && ['localhost', '127.0.0.1', 'vanity-eth.tk'].indexOf(hostname) === -1) {
-                    this.error = 'insecure_location';
-                }
             },
             benchmark(max) {
                 max = max || 10000;
@@ -289,7 +293,7 @@
         padding: 0
         font-family: 'Lato', sans-serif
         background: $bg-fallback
-        background: linear-gradient(140deg, $bg-2 0%, $bg-1 100%)
+        background: linear-gradient(150deg, $bg-2 0%, $bg-1 100%)
         background-attachment: fixed
         font-size: 16px
 

@@ -1,6 +1,7 @@
 {
-    "name": "",
-    "short_name": "",
+    "name": "Veleno",
+    "short_name": "Veleno",
+    "description": "Ethereum vanity address generator — browser-based, private, encrypted.",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -13,7 +14,7 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
+    "theme_color": "#0d0b14",
+    "background_color": "#0d0b14",
     "display": "standalone"
 }

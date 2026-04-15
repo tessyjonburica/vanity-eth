@@ -85,6 +85,35 @@ npm i
 npm run build
 ```
 
+## Wallet recurrence analysis tool
+
+This project now includes a recurrence-based wallet activity analyzer for Ethereum wallets.
+
+Run:
+
+```sh
+npm run analyze:wallet -- --wallet 0xYourWalletAddress
+```
+
+Optional parameters:
+
+-   `--apiKey <ETHERSCAN_API_KEY>`
+-   `--baseUrl <etherscan-compatible-api-url>`
+-   `--exchange <comma,separated,addresses>`
+-   `--spam <comma,separated,addresses>`
+-   `--top <N>` (default: 10)
+
+The analyzer now returns a simplified ranked list focused on recurrence and value flow.  
+Output fields per counterparty include:
+
+-   `address`
+-   `balance` (received - sent)
+-   `recurrence`
+-   `total_sent`
+-   `total_received`
+-   `direction` (`mostly_sent`, `mostly_received`, `balanced`)
+-   `label` (e.g. `frequent recipient`, `frequent sender`)
+
 ## Tips
 
 You can support this project by sending tips to `0xAceBabe64807cb045505b268ef253D8fC2FeF5Bc` 💛

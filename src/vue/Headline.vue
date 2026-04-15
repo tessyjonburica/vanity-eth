@@ -1,8 +1,7 @@
 <template>
-    <!--Github corner-->
     <div>
-        <h1>VANITY-ETH</h1>
-        <p>ETH vanity address generator</p>
+        <h1>VELENO</h1>
+        <p>Ethereum vanity address generator</p>
     </div>
 </template>
 
@@ -22,9 +21,11 @@
         h1
             font-size: 3em
             font-weight: 700
-            border: 4px solid $logo
-            width: 7.8em
+            letter-spacing: 0.18em
+            border: 3px solid $logo
+            width: 5.2em
             margin: 0 auto
+            padding: 0.05em 0.2em
 
         p
             font-size: 1.5em

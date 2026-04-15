@@ -1,8 +1,34 @@
 const path = require('path');
 const prettier = require('prettier');
+const { analyzeWalletRecurrence } = require('./src/js/walletRecurrenceAnalysis');
 
 module.exports = {
     publicPath: '',
+    devServer: {
+        before(app) {
+            app.get('/api/wallet-recurrence', async (req, res) => {
+                try {
+                    const wallet = String(req.query.wallet || '').trim();
+                    const parsedTop = Number(req.query.top || 10);
+                    const top = Math.min(20, Math.max(1, Number.isFinite(parsedTop) ? parsedTop : 10));
+                    if (!wallet) {
+                        return res.status(400).json({ error: 'wallet query parameter is required.' });
+                    }
+
+                    const result = await analyzeWalletRecurrence(wallet, {
+                        apiKey: process.env.ETHERSCAN_API_KEY || '',
+                        topResults: Number.isFinite(top) ? top : 10,
+                    });
+
+                    return res.json(result);
+                } catch (err) {
+                    return res.status(500).json({
+                        error: err && err.message ? err.message : 'wallet recurrence analysis failed',
+                    });
+                }
+            });
+        },
+    },
     chainWebpack: (config) => {
         // Worker Loader
         config.module
