@@ -337,22 +337,26 @@ const buildBaseFeatureMap = (transactions, targetAddress, historicalSet) => {
         }
 
         const feature = map.get(tx.counterparty);
-        const value = tx.valueNative + tx.valueToken;
+        // Important: do not mix ETH and token units.
+        // ETH values are denominated in native ETH; ERC-20 transfers each have their own unit/decimals.
+        // We still track token totals separately, but net flow/balance is ETH-only.
+        const valueEth = safeNumber(tx.valueNative);
+        const valueToken = safeNumber(tx.valueToken);
         feature.recurrenceCount += 1;
         feature.interactionIndexes.push(idx);
         feature.firstInteractionTimestamp = Math.min(feature.firstInteractionTimestamp, tx.timestamp);
         feature.lastInteractionTimestamp = Math.max(feature.lastInteractionTimestamp, tx.timestamp);
-        feature.totalNativeExchanged += tx.valueNative;
-        feature.totalTokenExchanged += tx.valueToken;
-        feature.totalValueExchanged += value;
+        feature.totalNativeExchanged += valueEth;
+        feature.totalTokenExchanged += valueToken;
+        feature.totalValueExchanged += valueEth;
         feature.interactionTypes.add(tx.interactionType);
         if (tx.direction === 'outbound') {
             feature.senderCount += 1;
-            feature.totalOutgoingValue += value;
+            feature.totalOutgoingValue += valueEth;
             feature.senderRepetitionFrequency += 1;
         } else {
             feature.receiverCount += 1;
-            feature.totalIncomingValue += value;
+            feature.totalIncomingValue += valueEth;
         }
         if (tx.isZeroValue) {
             feature.zeroValueInteractions += 1;
@@ -613,6 +617,7 @@ const simplifyRankedCounterparties = (rankedCounterparties, options = {}) => {
         return {
             address: normalizeAddress(entry.address),
             balance,
+            currency: 'ETH',
             recurrence,
             total_sent: Number(totalSent.toFixed(8)),
             total_received: Number(totalReceived.toFixed(8)),
