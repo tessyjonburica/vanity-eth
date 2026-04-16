@@ -6,7 +6,7 @@
     "main": "index.js",
     "private": true,
     "engines": {
-        "node": "18.x"
+        "node": "20.x"
     },
     "scripts": {
         "serve": "cross-env NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
