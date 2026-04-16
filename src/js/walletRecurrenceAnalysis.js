@@ -48,6 +48,30 @@ const parseAmount = (rawValue, decimals) => {
     return raw / 10 ** d;
 };
 
+const parseHexWeiToEth = (hexWei) => {
+    if (!hexWei || typeof hexWei !== 'string') {
+        return 0;
+    }
+    const clean = hexWei.startsWith('0x') ? hexWei.slice(2) : hexWei;
+    if (!clean) {
+        return 0;
+    }
+    // Use BigInt to avoid precision loss for large balances.
+    let wei;
+    try {
+        wei = BigInt(`0x${clean}`);
+    } catch (err) {
+        return 0;
+    }
+    // Convert to Number ETH with a reasonable precision for display/analysis.
+    const whole = wei / 10n ** 18n;
+    const frac = wei % 10n ** 18n;
+    const fracStr = frac.toString().padStart(18, '0').slice(0, 8); // 8 decimals is enough for UI here
+    const composed = `${whole.toString()}.${fracStr}`.replace(/\.$/, '');
+    const num = Number(composed);
+    return Number.isFinite(num) ? num : 0;
+};
+
 const toUnixTs = (tx) => Number(tx.timeStamp || tx.timestamp || 0);
 
 const safeNumber = (value) => {
@@ -156,6 +180,26 @@ const fetchAddressCode = async ({ baseUrl, apiKey, address }) => {
     } catch (err) {
         return '0x';
     }
+};
+
+const fetchWalletEthBalance = async ({ baseUrl, apiKey, address }) => {
+    const url = buildEtherscanUrl(baseUrl, {
+        chainid: '1',
+        module: 'account',
+        action: 'balance',
+        address,
+        tag: 'latest',
+        apikey: apiKey || '',
+    });
+    const payload = await requestJson(url);
+    // Etherscan v2 account balance returns result as a string Wei (base10).
+    // Some etherscan-compatible APIs may return hex via proxy; handle both.
+    const raw = payload && payload.result !== undefined ? payload.result : '0';
+    if (typeof raw === 'string' && raw.startsWith('0x')) {
+        return parseHexWeiToEth(raw);
+    }
+    const wei = safeNumber(raw);
+    return wei ? wei / 10 ** 18 : 0;
 };
 
 const mapNormalTransaction = (target, tx) => {
@@ -677,10 +721,22 @@ const analyzeWalletRecurrence = async (walletAddress, options = {}) => {
     const ranked = rankCounterparties(features);
     const simplified = simplifyRankedCounterparties(ranked, options);
 
+    let currentEthBalance = 0;
+    try {
+        currentEthBalance = await fetchWalletEthBalance({
+            baseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/v2/api',
+            apiKey: options.apiKey || getEnvApiKey(),
+            address: normalizedWallet,
+        });
+    } catch (err) {
+        currentEthBalance = 0;
+    }
+
     return {
         wallet: normalizedWallet,
         totalRecentTransactions: recent.length,
         totalReferenceTransactions: reference.length,
+        current_wallet_balance_eth: Number(currentEthBalance.toFixed(8)),
         counterparties: simplified,
     };
 };

@@ -40,6 +40,20 @@
             No recent valid interactions found.
         </p>
 
+        <div v-if="hasRun && !loading && !error" class="summary">
+            <div class="summary-item">
+                <div class="summary-label">Current wallet balance</div>
+                <div class="summary-value mono">{{ formatEth(currentWalletBalanceEth) }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Note</div>
+                <div class="summary-value">
+                    “Net flow” in the table is <span class="mono">(received − sent)</span> with each counterparty, which
+                    can differ from your current wallet balance.
+                </div>
+            </div>
+        </div>
+
         <div v-if="results.length" class="table-wrap">
             <table class="results-table">
                 <thead>
@@ -48,7 +62,7 @@
                         <th>Recurrence</th>
                         <th>Total Sent</th>
                         <th>Total Received</th>
-                        <th>Balance</th>
+                        <th>Net flow</th>
                         <th>Direction</th>
                         <th>Label</th>
                         <th class="tx-col">Tx</th>
@@ -100,6 +114,7 @@
                 error: '',
                 hasRun: false,
                 results: [],
+                currentWalletBalanceEth: 0,
             };
         },
         methods: {
@@ -121,6 +136,13 @@
                 });
                 return `${num < 0 ? '-$' : '$'}${formatted}`;
             },
+            formatEth(value) {
+                const num = Number(value);
+                if (!Number.isFinite(num)) {
+                    return '0 ETH';
+                }
+                return `${num.toLocaleString(undefined, { maximumFractionDigits: 8 })} ETH`;
+            },
             async runAnalysis() {
                 this.loading = true;
                 this.error = '';
@@ -136,8 +158,10 @@
                         throw new Error(response.error || 'Analysis failed.');
                     }
                     this.results = Array.isArray(response.counterparties) ? response.counterparties : [];
+                    this.currentWalletBalanceEth = Number(response.current_wallet_balance_eth || 0);
                 } catch (err) {
                     this.results = [];
+                    this.currentWalletBalanceEth = 0;
                     this.error = err && err.message ? err.message : 'Analysis failed.';
                 } finally {
                     this.loading = false;
@@ -177,6 +201,24 @@
     .error-text
         color: #ff9b9b
         margin-top: 1em
+
+    .summary
+        margin-top: 1em
+        display: grid
+        grid-template-columns: 1fr 2fr
+        gap: 0.9em
+        padding: 0.9em
+        border: 1px solid rgba(255, 255, 255, 0.12)
+        border-radius: 12px
+        background: rgba(255, 255, 255, 0.03)
+
+    .summary-label
+        font-size: 0.85em
+        opacity: 0.75
+        margin-bottom: 0.25em
+
+    .summary-value
+        font-size: 0.98em
 
     .table-wrap
         margin-top: 1.5em
@@ -227,6 +269,9 @@
 
     @media (max-width: 720px)
         .controls
+            grid-template-columns: 1fr
+
+        .summary
             grid-template-columns: 1fr
 
         .results-table
