@@ -51,17 +51,37 @@
                         <th>Balance</th>
                         <th>Direction</th>
                         <th>Label</th>
+                        <th class="tx-col">Tx</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="entry in results" :key="entry.address">
                         <td class="mono">{{ entry.address }}</td>
                         <td>{{ entry.recurrence }}</td>
-                        <td>{{ formatAmount(entry.total_sent) }}</td>
-                        <td>{{ formatAmount(entry.total_received) }}</td>
-                        <td>{{ formatAmount(entry.balance) }}</td>
+                        <td>{{ entry.total_sent_display || formatAmount(entry.total_sent) }}</td>
+                        <td>{{ entry.total_received_display || formatAmount(entry.total_received) }}</td>
+                        <td>{{ entry.balance_display || formatAmount(entry.balance) }}</td>
                         <td>{{ entry.direction }}</td>
                         <td>{{ entry.label }}</td>
+                        <td class="tx-col">
+                            <a
+                                v-if="entry.latest_tx_hash"
+                                class="tx-link"
+                                :href="etherscanTxUrl(entry.latest_tx_hash)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                :aria-label="`View tx ${entry.latest_tx_hash} on Etherscan`"
+                                title="View latest tx on Etherscan"
+                            >
+                                <svg class="tx-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path
+                                        fill="currentColor"
+                                        d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6v2H7v10h10v-4h2v6H5V5Z"
+                                    />
+                                </svg>
+                            </a>
+                            <span v-else class="tx-empty">—</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -83,6 +103,13 @@
             };
         },
         methods: {
+            etherscanTxUrl(hash) {
+                const safe = typeof hash === 'string' ? hash.trim() : '';
+                if (!safe) {
+                    return 'https://etherscan.io';
+                }
+                return `https://etherscan.io/tx/${encodeURIComponent(safe)}`;
+            },
             formatAmount(value) {
                 const num = Number(value);
                 if (!Number.isFinite(num)) {
@@ -171,6 +198,32 @@
         font-family: monospace
         font-size: 0.9em
         word-break: break-all
+
+    .tx-col
+        width: 52px
+        text-align: center
+
+    .tx-link
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        width: 32px
+        height: 32px
+        border-radius: 8px
+        color: rgba(255, 255, 255, 0.9)
+        text-decoration: none
+        transition: background-color 120ms ease, color 120ms ease
+
+    .tx-link:hover
+        background-color: rgba(255, 255, 255, 0.08)
+        color: #fff
+
+    .tx-icon
+        width: 18px
+        height: 18px
+
+    .tx-empty
+        opacity: 0.6
 
     @media (max-width: 720px)
         .controls

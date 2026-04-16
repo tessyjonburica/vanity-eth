@@ -58,6 +58,24 @@ const safeNumber = (value) => {
     return parsed;
 };
 
+const formatUsd = (value, options = {}) => {
+    const num = safeNumber(value);
+    const minimumFractionDigits = Number.isFinite(options.minimumFractionDigits) ? options.minimumFractionDigits : 2;
+    const maximumFractionDigits = Number.isFinite(options.maximumFractionDigits) ? options.maximumFractionDigits : 8;
+
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits,
+            maximumFractionDigits,
+        }).format(num);
+    } catch (err) {
+        const formatted = Math.abs(num).toLocaleString(undefined, { minimumFractionDigits, maximumFractionDigits });
+        return `${num < 0 ? '-$' : '$'}${formatted}`;
+    }
+};
+
 const requestJson = async (urlString) => {
     if (typeof fetch === 'function') {
         const response = await fetch(urlString);
@@ -323,6 +341,7 @@ const buildBaseFeatureMap = (transactions, targetAddress, historicalSet) => {
                 receiverCount: 0,
                 firstInteractionTimestamp: tx.timestamp,
                 lastInteractionTimestamp: tx.timestamp,
+                latestInteractionHash: tx.hash || '',
                 totalNativeExchanged: 0,
                 totalTokenExchanged: 0,
                 totalValueExchanged: 0,
@@ -341,7 +360,10 @@ const buildBaseFeatureMap = (transactions, targetAddress, historicalSet) => {
         feature.recurrenceCount += 1;
         feature.interactionIndexes.push(idx);
         feature.firstInteractionTimestamp = Math.min(feature.firstInteractionTimestamp, tx.timestamp);
-        feature.lastInteractionTimestamp = Math.max(feature.lastInteractionTimestamp, tx.timestamp);
+        if (tx.timestamp >= feature.lastInteractionTimestamp) {
+            feature.lastInteractionTimestamp = tx.timestamp;
+            feature.latestInteractionHash = tx.hash || feature.latestInteractionHash || '';
+        }
         feature.totalNativeExchanged += tx.valueNative;
         feature.totalTokenExchanged += tx.valueToken;
         feature.totalValueExchanged += value;
@@ -401,6 +423,7 @@ const computeFeatureScores = (featureMap, windowBounds, weights, labelsByAddress
             senderRepetitionFrequency: feature.senderRepetitionFrequency,
             firstInteractionTimestamp: feature.firstInteractionTimestamp,
             lastInteractionTimestamp: feature.lastInteractionTimestamp,
+            latestInteractionHash: feature.latestInteractionHash || '',
             totalValueExchanged: Number(feature.totalValueExchanged.toFixed(8)),
             totalNativeExchanged: Number(feature.totalNativeExchanged.toFixed(8)),
             totalTokenExchanged: Number(feature.totalTokenExchanged.toFixed(8)),
@@ -616,8 +639,12 @@ const simplifyRankedCounterparties = (rankedCounterparties, options = {}) => {
             recurrence,
             total_sent: Number(totalSent.toFixed(8)),
             total_received: Number(totalReceived.toFixed(8)),
+            balance_display: formatUsd(balance),
+            total_sent_display: formatUsd(totalSent),
+            total_received_display: formatUsd(totalReceived),
             direction,
             label: getSimpleInteractionLabel(direction, recurrence),
+            latest_tx_hash: entry.latestInteractionHash || '',
         };
     });
 
