@@ -4,6 +4,7 @@ const { analyzeWalletRecurrence } = require('./src/js/walletRecurrenceAnalysis')
 
 module.exports = {
     publicPath: '',
+    parallel: false,
     devServer: {
         before(app) {
             app.get('/api/wallet-recurrence', async (req, res) => {
