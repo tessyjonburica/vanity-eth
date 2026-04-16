@@ -5,6 +5,9 @@
     "license": "MIT",
     "main": "index.js",
     "private": true,
+    "engines": {
+        "node": "18.x"
+    },
     "scripts": {
         "serve": "cross-env NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
         "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider vue-cli-service build",
