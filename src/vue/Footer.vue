@@ -1,15 +1,9 @@
 <template>
     <footer>
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-12 col-lg-8 address">
-                    <span class="label">Tips&nbsp;</span>
-                    <a :href="`https://etherscan.io/address/${tipsAddress}`" target="_blank" v-text="tipsAddress"></a>
-                </div>
-                <div class="col-12 col-lg-4 links">
-                    <a :href="`https://etherscan.io/address/${tipsAddress}`" target="_blank">
-                        <i class="icon-ethereum"></i>&nbsp;&nbsp;Donate
-                    </a>
+            <div class="footer-row">
+                <div class="footer-left">
+                    <span class="footer-text">Data provided by Etherscan-compatible APIs.</span>
                 </div>
             </div>
         </div>
@@ -18,49 +12,36 @@
 
 <script>
     export default {
-        data: function () {
-            return {
-                tipsAddress: '0xAceBabe64807cb045505b268ef253D8fC2FeF5Bc',
-            };
-        },
+        name: 'Foot',
     };
 </script>
 
 <style lang="sass" scoped>
     @import "../css/variables"
     footer
-        padding: 1rem 0 0.5rem
+        padding: 0.9rem 0
         background-color: $panel-background
         color: $text-alt
         border-top: 1px solid $border-grey
-        a
-            text-decoration: none
-            color: $text-alt
-            &:hover
-                color: $text
-        .label
-            font-size: 0.78em
-            text-transform: uppercase
-            letter-spacing: 0.1em
-            color: $text-alt
-            margin-right: 4px
-        .address
-            margin-bottom: 12px
-            a
-                font-family: $monospace-font
-                font-size: 0.88em
-                word-break: break-all
-        .links
-            text-align: right
-            a
-                margin-right: 20px
-                i
-                    font-size: 1.1em
+
+    .footer-row
+        display: flex
+        align-items: center
+        justify-content: space-between
+        gap: 0.9rem
+
+    .footer-left
+        display: flex
+        align-items: center
+        gap: 0.6rem
+        min-width: 0
+
+    .footer-text
+        font-size: 0.9em
+        opacity: 0.8
 
     @media screen and (max-width: 480px)
-        footer
-            padding-bottom: 1em
-        .links
-            text-align: left
-            margin-top: 8px
+        .footer-row
+            flex-direction: column
+            align-items: flex-start
 </style>

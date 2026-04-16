@@ -5,7 +5,25 @@
 
         <div class="controls">
             <div class="field">
-                <label for="wallet-address">Wallet address</label>
+                <div class="label-row">
+                    <label for="wallet-address">Wallet address</label>
+                    <a
+                        v-if="walletAddress"
+                        class="etherscan-link"
+                        :href="etherscanAddressUrl(walletAddress)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Open wallet on Etherscan"
+                        title="Open wallet on Etherscan"
+                    >
+                        <svg class="tx-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                fill="currentColor"
+                                d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6v2H7v10h10v-4h2v6H5V5Z"
+                            />
+                        </svg>
+                    </a>
+                </div>
                 <input
                     id="wallet-address"
                     v-model.trim="walletAddress"
@@ -42,9 +60,12 @@
 
         <div v-if="hasRun && !loading" class="summary">
             <div class="summary-item">
-                <div class="summary-label">Current wallet balance</div>
+                <div class="summary-label">Current wallet balance (USD)</div>
                 <div class="summary-value mono">
-                    {{ currentWalletBalanceEth === null ? '—' : formatEth(currentWalletBalanceEth) }}
+                    {{
+                        currentWalletBalanceUsdDisplay ||
+                        (currentWalletBalanceUsd === null ? '—' : formatAmount(currentWalletBalanceUsd))
+                    }}
                 </div>
             </div>
             <div class="summary-item">
@@ -121,7 +142,8 @@
                 error: '',
                 hasRun: false,
                 results: [],
-                currentWalletBalanceEth: null,
+                currentWalletBalanceUsd: null,
+                currentWalletBalanceUsdDisplay: '',
             };
         },
         methods: {
@@ -131,6 +153,13 @@
                     return 'https://etherscan.io';
                 }
                 return `https://etherscan.io/tx/${encodeURIComponent(safe)}`;
+            },
+            etherscanAddressUrl(address) {
+                const safe = typeof address === 'string' ? address.trim() : '';
+                if (!safe) {
+                    return 'https://etherscan.io';
+                }
+                return `https://etherscan.io/address/${encodeURIComponent(safe)}`;
             },
             formatAmount(value) {
                 const num = Number(value);
@@ -142,13 +171,6 @@
                     maximumFractionDigits: 8,
                 });
                 return `${num < 0 ? '-$' : '$'}${formatted}`;
-            },
-            formatEth(value) {
-                const num = Number(value);
-                if (!Number.isFinite(num)) {
-                    return '0 ETH';
-                }
-                return `${num.toLocaleString(undefined, { maximumFractionDigits: 8 })} ETH`;
             },
             async runAnalysis() {
                 this.loading = true;
@@ -173,14 +195,20 @@
                         throw new Error(response.error || 'Analysis failed.');
                     }
                     this.results = Array.isArray(response.counterparties) ? response.counterparties : [];
-                    this.currentWalletBalanceEth =
-                        response.current_wallet_balance_eth !== undefined &&
-                        response.current_wallet_balance_eth !== null
-                            ? Number(response.current_wallet_balance_eth)
+                    this.currentWalletBalanceUsd =
+                        response.current_wallet_balance_usd !== undefined &&
+                        response.current_wallet_balance_usd !== null
+                            ? Number(response.current_wallet_balance_usd)
                             : null;
+                    this.currentWalletBalanceUsdDisplay =
+                        response.current_wallet_balance_usd_display &&
+                        typeof response.current_wallet_balance_usd_display === 'string'
+                            ? response.current_wallet_balance_usd_display
+                            : '';
                 } catch (err) {
                     this.results = [];
-                    this.currentWalletBalanceEth = null;
+                    this.currentWalletBalanceUsd = null;
+                    this.currentWalletBalanceUsdDisplay = '';
                     this.error = err && err.message ? err.message : 'Analysis failed.';
                 } finally {
                     this.loading = false;
@@ -193,6 +221,27 @@
 <style lang="sass" scoped>
     h2
         margin-bottom: 0.4em
+
+    .label-row
+        display: flex
+        align-items: center
+        justify-content: space-between
+        gap: 0.6em
+
+    .etherscan-link
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        width: 32px
+        height: 32px
+        border-radius: 8px
+        color: rgba(255, 255, 255, 0.9)
+        text-decoration: none
+        transition: background-color 120ms ease, color 120ms ease
+
+    .etherscan-link:hover
+        background-color: rgba(255, 255, 255, 0.08)
+        color: #fff
 
     .controls
         display: grid

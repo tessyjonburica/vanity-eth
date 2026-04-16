@@ -72,6 +72,28 @@ const parseHexWeiToEth = (hexWei) => {
     return Number.isFinite(num) ? num : 0;
 };
 
+const parseDecimalWeiToEth = (decimalWei) => {
+    if (!decimalWei || typeof decimalWei !== 'string') {
+        return 0;
+    }
+    const trimmed = decimalWei.trim();
+    if (!/^\d+$/.test(trimmed)) {
+        return 0;
+    }
+    let wei;
+    try {
+        wei = BigInt(trimmed);
+    } catch (err) {
+        return 0;
+    }
+    const whole = wei / 10n ** 18n;
+    const frac = wei % 10n ** 18n;
+    const fracStr = frac.toString().padStart(18, '0').slice(0, 8);
+    const composed = `${whole.toString()}.${fracStr}`.replace(/\.$/, '');
+    const num = Number(composed);
+    return Number.isFinite(num) ? num : 0;
+};
+
 const toUnixTs = (tx) => Number(tx.timeStamp || tx.timestamp || 0);
 
 const safeNumber = (value) => {
@@ -81,6 +103,10 @@ const safeNumber = (value) => {
     }
     return parsed;
 };
+
+let cachedEthUsdPrice = null;
+let cachedEthUsdPriceAtMs = 0;
+const ETH_USD_CACHE_TTL_MS = 60_000;
 
 const formatUsd = (value, options = {}) => {
     const num = safeNumber(value);
@@ -98,6 +124,24 @@ const formatUsd = (value, options = {}) => {
         const formatted = Math.abs(num).toLocaleString(undefined, { minimumFractionDigits, maximumFractionDigits });
         return `${num < 0 ? '-$' : '$'}${formatted}`;
     }
+};
+
+const fetchEthUsdPrice = async () => {
+    const now = Date.now();
+    if (cachedEthUsdPrice && now - cachedEthUsdPriceAtMs < ETH_USD_CACHE_TTL_MS) {
+        return cachedEthUsdPrice;
+    }
+
+    // CoinGecko public endpoint (no key). If it fails, caller can handle null.
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd';
+    const payload = await requestJson(url);
+    const price = payload && payload.ethereum ? safeNumber(payload.ethereum.usd) : 0;
+    if (!price) {
+        throw new Error('Failed to fetch ETH/USD price.');
+    }
+    cachedEthUsdPrice = price;
+    cachedEthUsdPriceAtMs = now;
+    return price;
 };
 
 const requestJson = async (urlString) => {
@@ -192,14 +236,31 @@ const fetchWalletEthBalance = async ({ baseUrl, apiKey, address }) => {
         apikey: apiKey || '',
     });
     const payload = await requestJson(url);
-    // Etherscan v2 account balance returns result as a string Wei (base10).
-    // Some etherscan-compatible APIs may return hex via proxy; handle both.
-    const raw = payload && payload.result !== undefined ? payload.result : '0';
-    if (typeof raw === 'string' && raw.startsWith('0x')) {
-        return parseHexWeiToEth(raw);
+    if (payload && typeof payload === 'object' && payload.status === '0') {
+        throw new Error(payload.message || 'Etherscan returned an error while fetching balance.');
     }
-    const wei = safeNumber(raw);
-    return wei ? wei / 10 ** 18 : 0;
+
+    // Etherscan account balance returns `result` as a decimal Wei string.
+    // Some etherscan-compatible APIs may return hex via proxy; handle both.
+    const raw = payload && payload.result !== undefined ? payload.result : '';
+    if (typeof raw === 'string' && raw.startsWith('0x')) {
+        const parsed = parseHexWeiToEth(raw);
+        if (!parsed) {
+            throw new Error('Invalid hex balance returned by provider.');
+        }
+        return parsed;
+    }
+    if (typeof raw === 'string') {
+        const parsed = parseDecimalWeiToEth(raw);
+        if (!parsed && raw.trim() !== '0') {
+            throw new Error('Invalid balance returned by provider.');
+        }
+        return parsed;
+    }
+    if (typeof raw === 'number') {
+        return raw ? raw / 10 ** 18 : 0;
+    }
+    throw new Error('Unexpected balance response format.');
 };
 
 const mapNormalTransaction = (target, tx) => {
@@ -721,22 +782,42 @@ const analyzeWalletRecurrence = async (walletAddress, options = {}) => {
     const ranked = rankCounterparties(features);
     const simplified = simplifyRankedCounterparties(ranked, options);
 
-    let currentEthBalance = 0;
+    let currentEthBalance = null;
     try {
-        currentEthBalance = await fetchWalletEthBalance({
+        const fetched = await fetchWalletEthBalance({
             baseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/v2/api',
             apiKey: options.apiKey || getEnvApiKey(),
             address: normalizedWallet,
         });
+        currentEthBalance = Number.isFinite(Number(fetched)) ? Number(Number(fetched).toFixed(8)) : null;
     } catch (err) {
-        currentEthBalance = 0;
+        currentEthBalance = null;
+    }
+
+    let currentWalletBalanceUsd = null;
+    let currentWalletBalanceUsdDisplay = null;
+    if (currentEthBalance !== null) {
+        try {
+            const ethUsd = await fetchEthUsdPrice();
+            const usd = Number((safeNumber(currentEthBalance) * safeNumber(ethUsd)).toFixed(2));
+            currentWalletBalanceUsd = Number.isFinite(usd) ? usd : null;
+            currentWalletBalanceUsdDisplay =
+                currentWalletBalanceUsd !== null
+                    ? formatUsd(currentWalletBalanceUsd, { maximumFractionDigits: 2 })
+                    : null;
+        } catch (err) {
+            currentWalletBalanceUsd = null;
+            currentWalletBalanceUsdDisplay = null;
+        }
     }
 
     return {
         wallet: normalizedWallet,
         totalRecentTransactions: recent.length,
         totalReferenceTransactions: reference.length,
-        current_wallet_balance_eth: Number(currentEthBalance.toFixed(8)),
+        current_wallet_balance_eth: currentEthBalance,
+        current_wallet_balance_usd: currentWalletBalanceUsd,
+        current_wallet_balance_usd_display: currentWalletBalanceUsdDisplay,
         counterparties: simplified,
     };
 };

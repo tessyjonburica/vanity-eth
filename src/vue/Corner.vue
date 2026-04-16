@@ -1,5 +1,5 @@
 <template>
-    <a href="https://github.com/bokub/vanity-eth" target="_blank" aria-label="View source on Github">
+    <a href="https://github.com/tessyjonburica" target="_blank" aria-label="View source on Github">
         <svg
             width="80"
             height="80"
