@@ -5,6 +5,12 @@ const { analyzeWalletRecurrence } = require('./src/js/walletRecurrenceAnalysis')
 module.exports = {
     publicPath: '',
     parallel: false,
+    pwa: {
+        workboxOptions: {
+            skipWaiting: true,
+            clientsClaim: true,
+        },
+    },
     devServer: {
         before(app) {
             app.get('/api/wallet-recurrence', async (req, res) => {
