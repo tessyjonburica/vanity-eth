@@ -109,6 +109,7 @@ const buildEtherscanUrl = (baseUrl, params) => {
 
 const fetchAction = async ({ baseUrl, apiKey, walletAddress, action, limit }) => {
     const url = buildEtherscanUrl(baseUrl, {
+        chainid: '1',
         module: 'account',
         action,
         address: walletAddress,
@@ -124,6 +125,7 @@ const fetchAction = async ({ baseUrl, apiKey, walletAddress, action, limit }) =>
 
 const fetchAddressCode = async ({ baseUrl, apiKey, address }) => {
     const url = buildEtherscanUrl(baseUrl, {
+        chainid: '1',
         module: 'proxy',
         action: 'eth_getCode',
         address,
@@ -492,7 +494,7 @@ const shouldFilterSpamLikeTransaction = (tx, options = {}) => {
 
 const retrieveTransactions = async (walletAddress, options = {}) => {
     const config = {
-        etherscanBaseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/api',
+        etherscanBaseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/v2/api',
         apiKey: options.apiKey || getEnvApiKey(),
         fetchLimit: options.fetchLimit || 200,
         recentLimit: options.recentLimit || DEFAULT_RECENT_LIMIT,
@@ -642,7 +644,7 @@ const analyzeWalletRecurrence = async (walletAddress, options = {}) => {
     const { recent, reference } = await retrieveTransactions(normalizedWallet, options);
     const features = await calculateCounterpartyFeatures(normalizedWallet, recent, reference, {
         ...options,
-        etherscanBaseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/api',
+        etherscanBaseUrl: options.etherscanBaseUrl || 'https://api.etherscan.io/v2/api',
         apiKey: options.apiKey || getEnvApiKey(),
     });
     const ranked = rankCounterparties(features);

@@ -14,7 +14,7 @@ const parseArgs = (argv) => {
     const args = {
         wallet: '',
         apiKey: process.env.ETHERSCAN_API_KEY || '',
-        baseUrl: 'https://api.etherscan.io/api',
+        baseUrl: 'https://api.etherscan.io/v2/api',
         exchangeAddresses: new Set(),
         spamAddresses: new Set(),
         top: 10,
