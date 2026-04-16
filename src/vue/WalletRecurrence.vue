@@ -40,10 +40,12 @@
             No recent valid interactions found.
         </p>
 
-        <div v-if="hasRun && !loading && !error" class="summary">
+        <div v-if="hasRun && !loading" class="summary">
             <div class="summary-item">
                 <div class="summary-label">Current wallet balance</div>
-                <div class="summary-value mono">{{ formatEth(currentWalletBalanceEth) }}</div>
+                <div class="summary-value mono">
+                    {{ currentWalletBalanceEth === null ? '—' : formatEth(currentWalletBalanceEth) }}
+                </div>
             </div>
             <div class="summary-item">
                 <div class="summary-label">Note</div>
@@ -54,7 +56,7 @@
             </div>
         </div>
 
-        <div v-if="results.length" class="table-wrap">
+        <div v-if="hasRun && !loading" class="table-wrap">
             <table class="results-table">
                 <thead>
                     <tr>
@@ -69,7 +71,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="entry in results" :key="entry.address">
+                    <tr v-if="error || results.length === 0">
+                        <td class="empty-row" colspan="8">
+                            {{ error ? `Could not load results: ${error}` : 'No results to display yet.' }}
+                        </td>
+                    </tr>
+                    <tr v-else v-for="entry in results" :key="entry.address">
                         <td class="mono">{{ entry.address }}</td>
                         <td>{{ entry.recurrence }}</td>
                         <td>{{ entry.total_sent_display || formatAmount(entry.total_sent) }}</td>
@@ -114,7 +121,7 @@
                 error: '',
                 hasRun: false,
                 results: [],
-                currentWalletBalanceEth: 0,
+                currentWalletBalanceEth: null,
             };
         },
         methods: {
@@ -153,15 +160,27 @@
                         top: String(this.topResults),
                     });
                     const raw = await fetch(`/api/wallet-recurrence?${query.toString()}`);
-                    const response = await raw.json();
+                    const text = await raw.text();
+                    let response;
+                    try {
+                        response = text ? JSON.parse(text) : {};
+                    } catch (parseErr) {
+                        throw new Error(
+                            `API returned non-JSON (status ${raw.status}). Are you running the API server?`
+                        );
+                    }
                     if (!raw.ok) {
                         throw new Error(response.error || 'Analysis failed.');
                     }
                     this.results = Array.isArray(response.counterparties) ? response.counterparties : [];
-                    this.currentWalletBalanceEth = Number(response.current_wallet_balance_eth || 0);
+                    this.currentWalletBalanceEth =
+                        response.current_wallet_balance_eth !== undefined &&
+                        response.current_wallet_balance_eth !== null
+                            ? Number(response.current_wallet_balance_eth)
+                            : null;
                 } catch (err) {
                     this.results = [];
-                    this.currentWalletBalanceEth = 0;
+                    this.currentWalletBalanceEth = null;
                     this.error = err && err.message ? err.message : 'Analysis failed.';
                 } finally {
                     this.loading = false;
@@ -266,6 +285,10 @@
 
     .tx-empty
         opacity: 0.6
+
+    .empty-row
+        padding: 0.9em 0.6em
+        opacity: 0.85
 
     @media (max-width: 720px)
         .controls
