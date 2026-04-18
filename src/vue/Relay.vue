@@ -35,12 +35,12 @@
                     />
                 </div>
                 <div class="col-md-4 col-sm-12 mt-2">
-                    <label for="fund-amt">Fund Amount (ETH)</label>
+                    <label for="fund-amt">Fund Amount (Gas)</label>
                     <input
                         id="fund-amt"
                         type="text"
                         class="text-input-large"
-                        placeholder="0.0003"
+                        placeholder="0.00002"
                         v-model="fundAmount"
                         :disabled="running"
                     />
@@ -88,7 +88,7 @@
                 victimAddress: '',
                 phishingAddress: '',
                 phishingPrivateKey: '',
-                fundAmount: '0.0003',
+                fundAmount: '0.00002',
                 running: false,
                 logs: [],
             };
@@ -161,17 +161,25 @@
         background: $panel-background
         border: 1px solid rgba($border-grey, 0.5)
         padding: 2em
+        @media screen and (max-width: 768px)
+            padding: 1.5em
+        @media screen and (max-width: 480px)
+            padding: 1.2em
 
     .relay-header
         border-left: 3px solid $primary
         padding-left: 15px
         margin-bottom: 25px
+        @media screen and (max-width: 480px)
+            margin-bottom: 15px
 
     h3
         color: $text
         font-size: 1.5em
         font-weight: 500
         margin: 0
+        @media screen and (max-width: 480px)
+            font-size: 1.3em
 
     .subtitle
         color: $text-alt
@@ -196,6 +204,9 @@
         font-size: 1.1em
         width: 100%
         transition: border-color 0.2s
+        @media screen and (max-width: 480px)
+            padding: 10px
+            font-size: 1em
         &::placeholder
             color: $placeholder
         &:focus
@@ -225,6 +236,10 @@
         overflow-y: auto
         border: 1px solid $border-grey
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.5)
+        @media screen and (max-width: 480px)
+            max-height: 140px
+            font-size: 0.75em
+            padding: 8px
 
         .log-entry
             margin-bottom: 4px
