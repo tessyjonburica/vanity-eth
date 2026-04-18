@@ -2,7 +2,7 @@
     <div class="panel" id="relay-panel">
         <div class="relay-header">
             <h3>Relay Automation</h3>
-            <p class="subtitle">Securely fund and execute zero-fee transactions for account aging.</p>
+            <p class="subtitle">Securely fund and execute zero-fee transactions.</p>
         </div>
 
         <form @submit.prevent="runRelay">
