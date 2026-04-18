@@ -55,6 +55,13 @@
                     <wallet-recurrence></wallet-recurrence>
                 </div>
             </div>
+
+            <!--Relay Bot-->
+            <div class="row">
+                <div class="col-md-12">
+                    <relay></relay>
+                </div>
+            </div>
         </div>
 
         <!--Save modal-->
@@ -81,9 +88,22 @@
     import Corner from './vue/Corner';
     import Foot from './vue/Footer';
     import WalletRecurrence from './vue/WalletRecurrence.vue';
+    import Relay from './vue/Relay.vue';
 
     export default {
-        components: { Headline, Description, Err, UserInput, Statistics, Result, Save, Corner, Foot, WalletRecurrence },
+        components: {
+            Headline,
+            Description,
+            Err,
+            UserInput,
+            Statistics,
+            Result,
+            Save,
+            Corner,
+            Foot,
+            WalletRecurrence,
+            Relay,
+        },
         data: function () {
             return {
                 running: false,

