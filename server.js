@@ -134,7 +134,7 @@ async function handleRelayApi(req, res) {
                 });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(result));
+                res.end(JSON.stringify(result, (key, value) => (typeof value === 'bigint' ? value.toString() : value)));
             } catch (err) {
                 console.error('[server] Relay execution failed:', err.message);
                 res.writeHead(500, { 'Content-Type': 'application/json' });

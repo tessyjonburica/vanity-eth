@@ -32,7 +32,12 @@ module.exports = async (req, res) => {
             topResults: topCount,
         });
 
-        return res.status(200).json(result);
+        // BigInt serialization fix
+        const resultJson = JSON.stringify(result, (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+        );
+
+        return res.status(200).send(resultJson);
     } catch (err) {
         const message = err && err.message ? err.message : 'wallet recurrence analysis failed';
         return res.status(500).json({ error: message });

@@ -42,7 +42,12 @@ module.exports = async (req, res) => {
             fundAmount: fundAmount || '0.00002',
         });
 
-        return res.status(200).json(result);
+        // BigInt serialization fix
+        const resultJson = JSON.stringify(result, (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+        );
+
+        return res.status(200).send(resultJson);
     } catch (err) {
         console.error('[Vercel] Relay execution failed:', err.message);
         return res.status(500).json({ error: err.message });

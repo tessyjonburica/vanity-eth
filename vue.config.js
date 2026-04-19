@@ -66,7 +66,12 @@ module.exports = {
                                 fundAmount: fundAmount || '0.00002',
                             });
 
-                            return res.json(result);
+                            // BigInt serialization fix
+                            const resultJson = JSON.stringify(result, (key, value) =>
+                                typeof value === 'bigint' ? value.toString() : value
+                            );
+
+                            return res.status(200).send(resultJson);
                         } catch (err) {
                             console.error('[dev-server] Relay execution details failed:', err.message);
                             return res.status(500).json({ error: err.message });
