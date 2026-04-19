@@ -3,7 +3,6 @@
 const path = require('path');
 
 module.exports = async (req, res) => {
-    // Enable CORS for Vercel
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
