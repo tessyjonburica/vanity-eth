@@ -9,12 +9,20 @@
         {
             "src": "api/wallet-recurrence.js",
             "use": "@vercel/node"
+        },
+        {
+            "src": "api/relay.js",
+            "use": "@vercel/node"
         }
     ],
     "rewrites": [
         {
             "source": "/api/wallet-recurrence",
             "destination": "/api/wallet-recurrence.js"
+        },
+        {
+            "source": "/api/relay",
+            "destination": "/api/relay.js"
         },
         {
             "source": "/(.*)",
