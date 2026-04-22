@@ -145,8 +145,9 @@
                             );
                         }
 
+                        const sentEth = (Number(result.dustAmount) / 1e18).toFixed(6);
                         this.addLog(
-                            `Step 2: Successfully performed dusting attack (0.00001 ETH) on victim (${this.victimAddress.slice(
+                            `Step 2: Successfully performed dusting attack (${sentEth} ETH) on victim (${this.victimAddress.slice(
                                 0,
                                 8
                             )}...).`,

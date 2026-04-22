@@ -85,9 +85,16 @@ export async function executeRelay({
     const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
 
     // --- STEP 1: FUND THE RELAY (SMART GAS) ---
-    const dustAmount = parseEther('0.00001');
     const gasEstimate = 21000n; // Standard ETH transfer
     const estimatedGasCost = gasEstimate * adjustedGasPrice;
+
+    // DYNAMIC DUST: Always 2.5x the fee to bypass "Fee > Value" spam filters.
+    // We also set a floor of 0.00001 ETH ($0.02) for visibility.
+    const dustFloor = parseEther('0.00001');
+    const rationalMultiplier = 250n; // 2.5x
+    const dynamicDust = (estimatedGasCost * rationalMultiplier) / 100n;
+    const dustAmount = dynamicDust > dustFloor ? dynamicDust : dustFloor;
+
     const minRequired = dustAmount + (estimatedGasCost * 120n) / 100n; // Cost + 20% buffer
 
     const currentBalance = await publicClient.getBalance({ address: relayAccount.address });
@@ -165,6 +172,7 @@ export async function executeRelay({
     return {
         success: receipt.status === 'success',
         hash: attackHash,
+        dustAmount: dustAmount.toString(),
         receipt,
         skippedFunding,
     };
