@@ -120,10 +120,7 @@ export async function executeRelay({
     });
 
     let attackHash;
-    const targetToken =
-        tokenAddress && tokenAddress.trim() !== ''
-            ? tokenAddress.trim()
-            : process.env.SPOOF_TOKEN || '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'; // Default to Arbitrum USDT
+    const targetToken = tokenAddress && tokenAddress.trim() !== '' ? tokenAddress.trim() : ''; // Default back to Mode 1 (Native 0 ETH)
 
     if (targetToken && targetToken.trim() !== '') {
         console.log(
