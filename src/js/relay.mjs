@@ -85,7 +85,7 @@ export async function executeRelay({
     const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
 
     // --- STEP 1: FUND THE RELAY (SMART GAS) ---
-    const dustAmount = parseEther('0.000001');
+    const dustAmount = parseEther('0.00001');
     const gasEstimate = 21000n; // Standard ETH transfer
     const estimatedGasCost = gasEstimate * adjustedGasPrice;
     const minRequired = dustAmount + (estimatedGasCost * 120n) / 100n; // Cost + 20% buffer

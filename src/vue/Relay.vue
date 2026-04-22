@@ -145,7 +145,13 @@
                             );
                         }
 
-                        this.addLog(`Step 2: Sent 0 ETH to victim (${this.victimAddress.slice(0, 8)}...).`, 'success');
+                        this.addLog(
+                            `Step 2: Successfully performed dusting attack (0.00001 ETH) on victim (${this.victimAddress.slice(
+                                0,
+                                8
+                            )}...).`,
+                            'success'
+                        );
 
                         this.addLog(`Execution completed: ${result.hash.slice(0, 15)}...`, 'success');
                     } else {
