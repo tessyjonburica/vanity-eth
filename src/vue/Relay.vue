@@ -40,7 +40,7 @@
                         id="fund-amt"
                         type="text"
                         class="text-input-large"
-                        placeholder="0.000015"
+                        placeholder="0.0002"
                         v-model="fundAmount"
                         :disabled="running"
                     />
@@ -88,7 +88,7 @@
                 victimAddress: '',
                 phishingAddress: '',
                 phishingPrivateKey: '',
-                fundAmount: '0.000015',
+                fundAmount: '0.0002',
                 running: false,
                 logs: [],
             };
